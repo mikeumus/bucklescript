@@ -17,4 +17,7 @@ site/
 .github/
 node_modules
 coverage
-jscomp/bin
+jscomp/
+!jscomp/stdlib
+!jscomp/others
+!jscomp/runtime
