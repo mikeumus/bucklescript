@@ -22,25 +22,25 @@ var os_arch = os.arch()
 var is_windows = !(os_type.indexOf('Windows') < 0)
 var is_bsd = !(os_type.indexOf('BSD') < 0)
 var root_dir = path.join(__dirname, '..')
-var lib_dir = path.join(root_dir,'lib')
+var lib_dir = path.join(root_dir, 'lib')
 var jscomp = path.join(root_dir, 'jscomp')
 
 
 var working_dir = process.cwd()
 console.log("Working dir", working_dir)
 var jscomp_dir_config = { cwd: jscomp, stdio: [0, 1, 2] }
-var root_dir_config = {cwd : root_dir, stdio: [0,1,2]}
+var root_dir_config = { cwd: root_dir, stdio: [0, 1, 2] }
 var build_util = require('./build_util')
 var vendor_ninja_version = '1.8.2'
 
-var ninja_bin_output = path.join(root_dir,'lib', 'ninja.exe')
-var ninja_source_dir = path.join(root_dir,'vendor','ninja')
-var ninja_build_dir = path.join(root_dir, 'vendor','ninja-build')
+var ninja_bin_output = path.join(root_dir, 'lib', 'ninja.exe')
+var ninja_source_dir = path.join(root_dir, 'vendor', 'ninja')
+var ninja_build_dir = path.join(root_dir, 'vendor', 'ninja-build')
 
 function build_ninja() {
     console.log('No prebuilt Ninja, building Ninja now')
     var build_ninja_command = "./configure.py --bootstrap"
-    child_process.execSync(build_ninja_command, { cwd: ninja_source_dir , stdio:[0,1,2]})
+    child_process.execSync(build_ninja_command, { cwd: ninja_source_dir, stdio: [0, 1, 2] })
     fs.renameSync(path.join(ninja_source_dir, 'ninja'), ninja_bin_output)
     console.log('ninja binary is ready: ', ninja_bin_output)
 }
@@ -57,7 +57,7 @@ function test_ninja_compatible(binary_path) {
         console.log('ninja not compatible?', String(e))
         return false;
     }
-    return  version === vendor_ninja_version;
+    return version === vendor_ninja_version;
 };
 
 
@@ -82,16 +82,32 @@ if (fs.existsSync(ninja_bin_output) && test_ninja_compatible(ninja_bin_output)) 
     build_ninja()
 }
 
+/**
+ * raise an exception if not matched
+ */
+function matchedCompilerExn() {
+    var output = child_process.execSync('ocamlc.opt -v', { encoding: 'ascii' })
+    if (output.indexOf("4.02.3") >= 0) {
+        console.log(output)
+        console.log("Use the compiler above")
+    } else {
+        console.log("No matched compiler found, may re-try")
+        throw ""
+    }
+}
+
+// Add vendor bin path
+// So that second try will work
 process.env.PATH = path.join(__dirname, '..', 'vendor', 'ocaml', 'bin') + path.delimiter + process.env.PATH
 var make = is_bsd ? 'gmake' : 'make';
 
 function non_windows_npm_release() {
 
     try {
-        if (process.env.BS_ALWAYS_BUILD_YOUR_COMPILER){
+        if (process.env.BS_ALWAYS_BUILD_YOUR_COMPILER) {
             throw 'FORCED TO REBUILD'
         }
-        child_process.execSync('node ./scripts/config_compiler.js', root_dir_config)
+        matchedCompilerExn()
     } catch (e) {
         console.log('Build a local version of OCaml compiler, it may take a couple of minutes')
         try {
@@ -103,7 +119,7 @@ function non_windows_npm_release() {
             throw e;
         }
         console.log('configure again with local ocaml installed')
-        child_process.execSync('node ./scripts/config_compiler.js', root_dir_config)
+        matchedCompilerExn()
         console.log("config finished")
     }
     console.log("Build the compiler and runtime .. ")
