@@ -67,7 +67,7 @@ fs.readdirSync(path.join(root,'lib')).forEach(function(f){
     if(last_index !== -1){
 	var new_file = f.slice(0,-4) + ".win"
 	console.log( f + " --> " + new_file)
-	fs.renameSync(path.join(jscomp, 'bin',f), path.join(jscomp,'bin',new_file))
+	fs.renameSync(path.join(root, 'lib',f), path.join(root,'lib',new_file))
     } 
 })
 
