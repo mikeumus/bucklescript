@@ -1,4 +1,4 @@
-
+//@ts-check
 // For Windows, we distribute a prebuilt bsc.exe
 // To build on windows, we still need figure out constructing config.ml
 // from existing  compiler
@@ -22,19 +22,20 @@ var os_arch = os.arch()
 var is_windows = !(os_type.indexOf('Windows') < 0)
 var is_bsd = !(os_type.indexOf('BSD') < 0)
 var root_dir = path.join(__dirname, '..')
+var lib_dir = path.join(root_dir,'lib')
 var jscomp = path.join(root_dir, 'jscomp')
-var jscomp_bin = path.join(jscomp, 'bin')
+
 
 var working_dir = process.cwd()
 console.log("Working dir", working_dir)
-var working_config = { cwd: jscomp, stdio: [0, 1, 2] }
-
+var jscomp_dir_config = { cwd: jscomp, stdio: [0, 1, 2] }
+var root_dir_config = {cwd : root_dir, stdio: [0,1,2]}
 var build_util = require('./build_util')
 var vendor_ninja_version = '1.8.2'
 
-var ninja_bin_output = path.join(root_dir, 'bin', 'ninja.exe')
+var ninja_bin_output = path.join(root_dir,'lib', 'ninja.exe')
 var ninja_source_dir = path.join(root_dir,'vendor','ninja')
-var ninja_build_dir = path.join(root_dir, 'vendor', 'ninja-build')
+var ninja_build_dir = path.join(root_dir, 'vendor','ninja-build')
 
 function build_ninja() {
     console.log('No prebuilt Ninja, building Ninja now')
@@ -49,7 +50,7 @@ function test_ninja_compatible(binary_path) {
     var version;
     try {
         version = child_process.execSync(JSON.stringify(binary_path) + ' --version', {
-            encoding: 'utf-8',
+            encoding: 'utf8',
             stdio: ['pipe', 'pipe', 'ignore'] // execSync outputs to stdout even if we catch the error. Silent it here
         }).trim();
     } catch (e) {
@@ -90,7 +91,7 @@ function non_windows_npm_release() {
         if (process.env.BS_ALWAYS_BUILD_YOUR_COMPILER){
             throw 'FORCED TO REBUILD'
         }
-        child_process.execSync('node ../scripts/config_compiler.js', working_config)
+        child_process.execSync('node ./scripts/config_compiler.js', root_dir_config)
     } catch (e) {
         console.log('Build a local version of OCaml compiler, it may take a couple of minutes')
         try {
@@ -102,13 +103,13 @@ function non_windows_npm_release() {
             throw e;
         }
         console.log('configure again with local ocaml installed')
-        child_process.execSync('node ../scripts/config_compiler.js', working_config)
+        child_process.execSync('node ./scripts/config_compiler.js', root_dir_config)
         console.log("config finished")
     }
     console.log("Build the compiler and runtime .. ")
-    child_process.execSync(make + " world", working_config)
+    child_process.execSync(make + " world", root_dir_config)
     console.log("Installing")
-    child_process.execSync(make + ' VERBOSE=true install', working_config)
+    child_process.execSync(make + ' VERBOSE=true install', root_dir_config)
 
 }
 
@@ -116,11 +117,11 @@ if (is_windows) {
     process.env.WIN32 = '1'
     console.log("Installing on Windows")
     var indeed_windows_release = 0
-    fs.readdirSync(jscomp_bin).forEach(function (f) {
+    fs.readdirSync(lib_dir).forEach(function (f) {
         var last_index = f.lastIndexOf('.win')
         if (last_index !== -1) {
             var new_file = f.slice(0, -4) + ".exe"
-            build_util.poor_copy_sync(path.join(jscomp_bin, f), path.join(jscomp_bin, new_file));
+            build_util.poor_copy_sync(path.join(lib_dir, f), path.join(lib_dir, new_file));
             // we do have .win file which means windows npm release
             ++indeed_windows_release
         }
@@ -129,7 +130,7 @@ if (is_windows) {
     if (indeed_windows_release > 1) {
         // Make it more fault tolerant
         // =1 can still be okay (only ninja.win in this case)
-        child_process.execFileSync(path.join(__dirname, 'win_build.bat'), working_config)
+        child_process.execFileSync(path.join(__dirname, 'win_build.bat'), jscomp_dir_config)
         // clean.clean()
         console.log("Installing")
         build_util.install()

@@ -11,7 +11,10 @@
 jscomp/build_tests
 jscomp/cmd_tests
 jscomp/test
+docs/
+site/
 .vscode/
 .github/
 node_modules
 coverage
+jscomp/bin
