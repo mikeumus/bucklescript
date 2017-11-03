@@ -640,7 +640,7 @@ travis-world-test:
 
 
 # ./runtime/js_null_undefined.ml ./runtime/js_null_undefined.cmi
-include all.depend
+-include all.depend
 -include $(SNAPSHOT_DEPS)
 
 clean:
